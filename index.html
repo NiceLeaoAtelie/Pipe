@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pipe CNC - Paulo</title>
+    <title>CRM Pipe CNC - Paulo (RESTAURADO)</title>
     <style>
         :root {
             --fundo: #f0f2f5; --primary: #1a237e; --whatsapp: #25d366; --foto: #8e44ad; --origem: #e74c3c;
@@ -23,7 +23,7 @@
         .coluna { background: #ebedf0; min-width: 320px; border-radius: 10px; padding: 12px; box-shadow: inset 0 0 5px rgba(0,0,0,0.05); min-height: 450px; }
         .coluna h3 { font-size: 13px; text-transform: uppercase; color: #5e6c84; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 5px; text-align: center; }
         
-        .lead-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 6px solid #ccc; transition: 0.2s; }
+        .lead-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 6px solid #ccc; transition: 0.2s; position: relative; }
         .lead-nome { font-weight: bold; font-size: 17px; color: #172b4d; display: block; }
         .lead-origem { display: inline-block; background: #fff5f5; color: var(--origem); font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--origem); margin-bottom: 8px; text-transform: uppercase; }
         .lead-detalhes { font-size: 12px; color: #444; background: #f4f7f6; padding: 10px; border-radius: 6px; border-left: 3px solid #ccc; margin: 12px 0; font-style: italic; white-space: pre-wrap; }
@@ -50,7 +50,7 @@
 </div>
 
 <div class="form-novo" id="meuForm">
-    <input type="hidden" id="edit_id"> 
+    <input type="hidden" id="edit_id" value=""> 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <input type="text" id="l_nome" placeholder="Nome do Cliente">
         <input type="text" id="l_zap" placeholder="WhatsApp (DDD + Número)">
@@ -97,6 +97,7 @@
         { id: "Perdido", titulo: "🛑 Perdido" }
     ];
 
+    // IMPORTANTE: Nome da chave corrigido para buscar seus dados antigos
     let leads = JSON.parse(localStorage.getItem('leads_cnc_v3')) || [];
 
     function renderizar() {
@@ -125,7 +126,7 @@
                         <select class="mudar-status" onchange="mudarStatus('${l.id}', this.value)">
                             ${fases.map(f => `<option value="${f.id}" ${f.id === l.status ? 'selected' : ''}>Mover</option>`).join('')}
                         </select>
-                        <button class="btn-edit" onclick="prepararEdicao('${l.id}')" title="Editar Card">📝</button>
+                        <button class="btn-edit" onclick="prepararEdicao('${l.id}')">📝</button>
                         <button class="btn-zap" onclick="falarZap('${l.contato}', '${l.nome}')">Zap</button>
                         <button class="btn-del" onclick="deletarLead('${l.id}')">🗑️</button>
                     </div>
@@ -147,12 +148,17 @@
         const fotoLink = document.getElementById('l_foto_link').value;
         const origem = document.getElementById('l_origem').value;
 
-        if(!nome) return alert("Preencha ao menos o nome do cliente!");
+        if(!nome) {
+            alert("Por favor, digite pelo menos o nome do cliente.");
+            return;
+        }
 
-        if(idEdit) {
+        if(idEdit && idEdit !== "") {
+            // Atualizar
             leads = leads.map(l => l.id === idEdit ? { ...l, nome, contato: zap, valor, status, obs, fotoLink, origem } : l);
             cancelarEdicao();
         } else {
+            // Novo
             const novoLead = { id: Date.now().toString(), nome, contato: zap, valor, status, obs, fotoLink, origem };
             leads.push(novoLead);
         }
@@ -206,19 +212,23 @@
     }
 
     function deletarLead(id) {
-        if(confirm("Deseja excluir este lead?")) {
+        if(confirm("Deseja realmente excluir este lead?")) {
             leads = leads.filter(l => l.id !== id);
             renderizar();
         }
     }
 
     function falarZap(tel, nome) {
-        if(!tel) return alert("Sem WhatsApp cadastrado!");
+        if(!tel) {
+            alert("Este cliente não tem WhatsApp!");
+            return;
+        }
         let num = tel.replace(/\D/g, '');
         if(!num.startsWith('55')) num = '55' + num;
         window.open(`https://wa.me/${num}?text=Olá ${nome}, tudo bem?`, '_blank');
     }
 
+    // Iniciar
     renderizar();
 </script>
 </body>
