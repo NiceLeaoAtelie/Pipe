@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pipe CNC - Paulo (Edição Ativada)</title>
+    <title>CRM Pipe CNC - Paulo</title>
     <style>
         :root {
             --fundo: #f0f2f5; --primary: #1a237e; --whatsapp: #25d366; --foto: #8e44ad; --origem: #e74c3c;
-            --novo: #95a5a6; --qualif: #f1c40f; --orca: #3498db; --negoc: #e67e22; --ganho: #2ecc71;
+            --novo: #95a5a6; --qualif: #f1c40f; --orca: #3498db; --negoc: #e67e22; --ganho: #2ecc71; --perdido: #546e7a;
         }
         body { font-family: 'Segoe UI', sans-serif; background: var(--fundo); margin: 0; padding: 15px; }
         .header { text-align: center; color: var(--primary); margin-bottom: 20px; }
@@ -34,6 +34,7 @@
         .status-Orçamento { border-top-color: var(--orca); }
         .status-Negociação { border-top-color: var(--negoc); }
         .status-Ganho { border-top-color: var(--ganho); }
+        .status-Perdido { border-top-color: var(--perdido); opacity: 0.7; }
 
         .acoes { display: flex; gap: 5px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; flex-wrap: wrap; }
         .btn-zap { background: var(--whatsapp); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; flex-grow: 1; }
@@ -49,7 +50,8 @@
 </div>
 
 <div class="form-novo" id="meuForm">
-    <input type="hidden" id="edit_id"> <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+    <input type="hidden" id="edit_id"> 
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <input type="text" id="l_nome" placeholder="Nome do Cliente">
         <input type="text" id="l_zap" placeholder="WhatsApp (DDD + Número)">
     </div>
@@ -62,8 +64,8 @@
             <option value="Indicação">Indicação</option>
             <option value="OLX">OLX</option>
             <option value="Facebook">Facebook</option>
-            <option value="Outros">Outros</option>
             <option value="TikTok">TikTok</option>
+            <option value="Outros">Outros</option>
         </select>
     </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -74,7 +76,6 @@
             <option value="Negociação">Negociação</option>
             <option value="Ganho">Ganho (Pedido)</option>
             <option value="Perdido">Perdido (Desistiu)</option>
-            
         </select>
         <input type="text" id="l_foto_link" placeholder="Link da Foto do Tecido">
     </div>
@@ -92,8 +93,8 @@
         { id: "Qualificação", titulo: "🔍 Qualificação" },
         { id: "Orçamento", titulo: "📄 Orçamento" },
         { id: "Negociação", titulo: "🤝 Negociação" },
-        { id: "Ganho", titulo: "💰 Ganhos" }
-        { id: "Perdido", titulo: " 🛑Perdido" }
+        { id: "Ganho", titulo: "💰 Ganhos" },
+        { id: "Perdido", titulo: "🛑 Perdido" }
     ];
 
     let leads = JSON.parse(localStorage.getItem('leads_cnc_v3')) || [];
@@ -149,11 +150,9 @@
         if(!nome) return alert("Preencha ao menos o nome do cliente!");
 
         if(idEdit) {
-            // MODO EDIÇÃO: Atualiza o lead existente
             leads = leads.map(l => l.id === idEdit ? { ...l, nome, contato: zap, valor, status, obs, fotoLink, origem } : l);
-            cancelarEdicao(); // Limpa o formulário e volta ao normal
+            cancelarEdicao();
         } else {
-            // MODO NOVO: Cria um lead novo
             const novoLead = { id: Date.now().toString(), nome, contato: zap, valor, status, obs, fotoLink, origem };
             leads.push(novoLead);
         }
@@ -166,7 +165,6 @@
         const lead = leads.find(l => l.id === id);
         if(!lead) return;
 
-        // Preenche o formulário
         document.getElementById('edit_id').value = lead.id;
         document.getElementById('l_nome').value = lead.nome;
         document.getElementById('l_zap').value = lead.contato || '';
@@ -176,12 +174,11 @@
         document.getElementById('l_foto_link').value = lead.fotoLink || '';
         document.getElementById('l_origem').value = lead.origem || '';
 
-        // Muda visual do botão e formulário
-        document.getElementById('btnAcao').innerText = "💾 SALVAR ALTERAÇÕES NO CARD";
+        document.getElementById('btnAcao').innerText = "💾 SALVAR ALTERAÇÕES";
         document.getElementById('btnAcao').style.background = "#2ecc71";
         document.getElementById('meuForm').classList.add('editando-modo');
         document.getElementById('btnCancel').style.display = "block";
-        window.scrollTo(0,0); // Sobe a página para o formulário
+        window.scrollTo(0,0);
     }
 
     function cancelarEdicao() {
@@ -194,7 +191,12 @@
     }
 
     function limparCampos() {
-        document.querySelectorAll('#meuForm input, #meuForm textarea, #meuForm select').forEach(i => { if(i.id !== 'edit_id') i.value = ''; });
+        document.getElementById('l_nome').value = '';
+        document.getElementById('l_zap').value = '';
+        document.getElementById('l_valor').value = '';
+        document.getElementById('l_obs').value = '';
+        document.getElementById('l_foto_link').value = '';
+        document.getElementById('l_origem').value = '';
         document.getElementById('l_status').value = 'Novo';
     }
 
@@ -211,7 +213,7 @@
     }
 
     function falarZap(tel, nome) {
-        if(!tel) return alert("Este cliente ainda não tem WhatsApp cadastrado. Clique no lápis (📝) para editar e acrescentar o número.");
+        if(!tel) return alert("Sem WhatsApp cadastrado!");
         let num = tel.replace(/\D/g, '');
         if(!num.startsWith('55')) num = '55' + num;
         window.open(`https://wa.me/${num}?text=Olá ${nome}, tudo bem?`, '_blank');
