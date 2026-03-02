@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pipe CNC - Paulo</title>
+    <title>CRM Interno CNC - Paulo</title>
     <style>
         :root {
-            --fundo: #f0f2f5;
-            --primary: #1a237e;
-            --whatsapp: #25d366;
+            --fundo: #f0f2f5; --primary: #1a237e; --whatsapp: #25d366;
             --novo: #95a5a6; --qualif: #f1c40f; --orca: #3498db; --negoc: #e67e22; --ganho: #2ecc71;
         }
         body { font-family: 'Segoe UI', sans-serif; background: var(--fundo); margin: 0; padding: 15px; }
@@ -21,14 +19,14 @@
 
         /* Container do Pipe */
         .pipe-container { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 20px; align-items: flex-start; }
-        .coluna { background: #ebedf0; min-width: 300px; border-radius: 10px; padding: 12px; box-shadow: inset 0 0 5px rgba(0,0,0,0.05); }
+        .coluna { background: #ebedf0; min-width: 300px; border-radius: 10px; padding: 12px; box-shadow: inset 0 0 5px rgba(0,0,0,0.05); min-height: 400px; }
         .coluna h3 { font-size: 13px; text-transform: uppercase; color: #5e6c84; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
         
         /* Cartão do Lead */
         .lead-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 6px solid #ccc; position: relative; }
         .lead-nome { font-weight: bold; font-size: 16px; color: #172b4d; display: block; margin-bottom: 5px; }
         .lead-info { font-size: 13px; color: #555; margin: 3px 0; }
-        .lead-detalhes { font-size: 12px; color: #666; background: #f9f9f9; padding: 8px; border-radius: 4px; border-left: 3px solid #ddd; margin: 10px 0; font-style: italic; }
+        .lead-detalhes { font-size: 12px; color: #666; background: #f9f9f9; padding: 8px; border-radius: 4px; border-left: 3px solid #ddd; margin: 10px 0; font-style: italic; white-space: pre-line; }
         .lead-valor { font-weight: bold; color: var(--primary); font-size: 15px; }
 
         /* Cores das Bordas */
@@ -38,15 +36,17 @@
         .status-Negociação { border-top-color: var(--negoc); }
         .status-Ganho { border-top-color: var(--ganho); }
 
-        .btn-zap { background: var(--whatsapp); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; }
-        .btn-zap:hover { opacity: 0.9; }
+        .acoes { display: flex; gap: 5px; margin-top: 10px; }
+        .btn-zap { background: var(--whatsapp); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-del { background: #ff4d4d; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; }
         select.mudar-status { padding: 8px; font-size: 12px; border-radius: 4px; border: 1px solid #ddd; flex-grow: 1; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h2>🚀 Gestão de Leads CNC</h2>
+    <h2>🚀 CRM Local CNC - Paulo</h2>
+    <small>Dados salvos apenas neste dispositivo</small>
 </div>
 
 <div class="form-novo">
@@ -61,21 +61,17 @@
             <option value="Qualificação">Qualificação</option>
             <option value="Orçamento">Orçamento Enviado</option>
             <option value="Negociação">Negociação</option>
-            <option value="Ganho">Ganho (Virou Pedido)</option>
+            <option value="Ganho">Ganho (Pedido)</option>
         </select>
     </div>
-    <textarea id="l_obs" rows="3" placeholder="Detalhes da conversa (o que o cliente quer, medidas, material...)"></textarea>
-    <button class="btn-add" onclick="adicionarLead()">➕ CADASTRAR NO SISTEMA</button>
+    <textarea id="l_obs" rows="3" placeholder="Detalhes da conversa..."></textarea>
+    <button class="btn-add" onclick="adicionarLead()">➕ CADASTRAR AGORA</button>
 </div>
 
-<div class="pipe-container" id="pipe_grid">
-    </div>
+<div class="pipe-container" id="pipe_grid"></div>
 
 <script>
-    // ⚠️ COLOQUE SEU LINK DO GOOGLE SCRIPT AQUI ABAIXO
-    const SCRIPT_URL = "SUA_URL_DO_GOOGLE_SCRIPT_AQUI"; 
-
-    let leads = [];
+    // Fases do Funil
     const fases = [
         { id: "Novo", titulo: "🆕 Novos" },
         { id: "Qualificação", titulo: "🔍 Qualificação" },
@@ -84,14 +80,8 @@
         { id: "Ganho", titulo: "💰 Ganhos" }
     ];
 
-    async function carregar() {
-        document.getElementById('pipe_grid').innerHTML = "Carregando leads...";
-        try {
-            const res = await fetch(SCRIPT_URL);
-            leads = await res.json();
-            renderizar();
-        } catch (e) { document.getElementById('pipe_grid').innerHTML = "Erro ao carregar dados."; }
-    }
+    // Carregar dados salvos no navegador ao abrir
+    let leads = JSON.parse(localStorage.getItem('leads_cnc')) || [];
 
     function renderizar() {
         const grid = document.getElementById('pipe_grid');
@@ -110,38 +100,72 @@
                     <span class="lead-nome">${l.nome}</span>
                     <div class="lead-info">📞 ${l.contato}</div>
                     <div class="lead-valor">R$ ${parseFloat(l.valor || 0).toFixed(2)}</div>
-                    <div class="lead-detalhes">${l.obs || 'Sem detalhes anotados.'}</div>
+                    <div class="lead-detalhes">${l.obs || 'Sem detalhes.'}</div>
                     
-                    <div style="display:flex; gap:5px; margin-top:10px;">
+                    <div class="acoes">
                         <select class="mudar-status" onchange="mudarStatus('${l.id}', this.value)">
                             ${fases.map(f => `<option value="${f.id}" ${f.id === l.status ? 'selected' : ''}>Mover para ${f.id}</option>`).join('')}
                         </select>
                         <button class="btn-zap" onclick="falarZap('${l.contato}', '${l.nome}', '${l.status}')">Zap</button>
+                        <button class="btn-del" onclick="deletarLead('${l.id}')">🗑️</button>
                     </div>
                 `;
                 col.appendChild(card);
             });
             grid.appendChild(col);
         });
+        
+        // Salva sempre que renderizar
+        localStorage.setItem('leads_cnc', JSON.stringify(leads));
     }
 
-    async function adicionarLead() {
+    function adicionarLead() {
         const nome = document.getElementById('l_nome').value;
         const zap = document.getElementById('l_zap').value;
         const valor = document.getElementById('l_valor').value;
         const status = document.getElementById('l_status').value;
         const obs = document.getElementById('l_obs').value;
 
-        if(!nome || !zap) return alert("Nome e WhatsApp são obrigatórios!");
+        if(!nome || !zap) return alert("Preencha Nome e WhatsApp!");
 
-        const payload = {
-            action: "addLead",
-            id: String(Date.now()),
+        const novoLead = {
+            id: Date.now().toString(),
             nome, contato: zap, valor, status, obs
         };
 
-        try {
-            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-            alert("Lead salvo com sucesso!");
-            location.reload(); // Recarrega para mostrar o novo
-        } catch(e) { alert("Erro ao salvar
+        leads.push(novoLead);
+        renderizar();
+
+        // Limpa formulário
+        document.getElementById('l_nome').value = '';
+        document.getElementById('l_zap').value = '';
+        document.getElementById('l_valor').value = '';
+        document.getElementById('l_obs').value = '';
+    }
+
+    function mudarStatus(id, novoStatus) {
+        leads = leads.map(l => l.id === id ? {...l, status: novoStatus} : l);
+        renderizar();
+    }
+
+    function deletarLead(id) {
+        if(confirm("Deseja excluir este lead permanentemente?")) {
+            leads = leads.filter(l => l.id !== id);
+            renderizar();
+        }
+    }
+
+    function falarZap(tel, nome, status) {
+        let num = tel.replace(/\D/g, '');
+        if(!num.startsWith('55')) num = '55' + num;
+        let msg = `Olá ${nome}, tudo bem? Aqui é o Paulo da CNC.`;
+        if(status === "Orçamento") msg = `Oi ${nome}, seu orçamento da CNC ficou pronto!`;
+        window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    // Iniciar
+    renderizar();
+</script>
+
+</body>
+</html>
